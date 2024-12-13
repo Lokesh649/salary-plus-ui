@@ -37,12 +37,17 @@ function App() {
      try {
        const response = await fetch(
          //'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyDst_ttD22u61RAHnS2wAjIUIKUHtuZ7PM',
-         'https://8091-cs-2cd89a3d-2154-45ea-9f90-2fa02b7963e1.cs-asia-southeast1-seal.cloudshell.dev/salary-plus/chat?prompt='+newQuery.content,
+         //'https://8091-cs-2cd89a3d-2154-45ea-9f90-2fa02b7963e1.cs-asia-southeast1-seal.cloudshell.dev/salary-plus/chat?prompt='+newQuery.content,
+         'https://9091-cs-2cd89a3d-2154-45ea-9f90-2fa02b7963e1.cs-asia-southeast1-seal.cloudshell.dev/salary-plus/chat?prompt='+newQuery.content,
          {
+           mode: 'no-cors',
            method: 'GET',
-          //  headers: {
-          //    'Content-Type': 'application/json',
-          //  },
+
+           headers: {
+             'Content-Type': 'application/json',
+             'Access-Control-Allow-Origin':'*',
+             'accept': '*/*'
+           },
           //  body: JSON.stringify({ prompt: newQuery.content }),
          }
        );
