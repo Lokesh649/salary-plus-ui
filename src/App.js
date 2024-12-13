@@ -1,194 +1,182 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Container,
-  Grid,
   TextField,
-  Button,
+  IconButton,
   Typography,
   Box,
+  Paper,
+  CircularProgress,
 } from '@mui/material';
-
+import SendIcon from '@mui/icons-material/Send';
+import './App.css';
 function App() {
   const [prompt, setPrompt] = useState('');
-  const [response, setResponse] = useState('');
+  const [chatHistory, setChatHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const inputRef = useRef(null);
 
   const handlePromptChange = (event) => {
     setPrompt(event.target.value);
   };
 
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [inputRef.current]);
+
   const handleSubmit = async () => {
-    try {
+    if (!prompt.trim()) return;
 
-      let dataset = `[
-        {
-          "id": 1,
-          "position": "QNXT Configuration QA/Testing SME",
-          "location": "Ghaziabad",
-          "gender": "Female",
-          "education": "B.Tech/B.E.",
-          "experience": 11,
-          "salary": 2014510
-        },
-        {
-          "id": 2,
-          "position": "Provider Data Management",
-          "location": "New Delhi",
-          "gender": "Female",
-          "education": "B.Tech/B.E.",
-          "experience": 24,
-          "salary": 1624349
-        },
-        {
-          "id": 3,
-          "position": "Accessibility Engineer QA",
-          "location": "Noida",
-          "gender": "Female",
-          "education": "BCA",
-          "experience": 25,
-          "salary": 1926223
-        },
-        {
-          "id": 4,
-          "position": "Senior Software Engineer",
-          "location": "Jalandhar",
-          "gender": "Male",
-          "education": "NA",
-          "experience": 27,
-          "salary": 2403560
-        },
-        {
-          "id": 5,
-          "position": "Java Developer/Spring Boot",
-          "location": "Meerut",
-          "gender": "Male",
-          "education": "B.A",
-          "experience": 11,
-          "salary": 1128404
-        },
-        {
-          "id": 6,
-          "position": "iOS Tester",
-          "location": "Padampur",
-          "gender": "Female",
-          "education": "B.Com",
-          "experience": 15,
-          "salary": 2090495
-        },
-        {
-          "id": 7,
-          "position": "GCP Cloud Architect",
-          "location": "New Delhi",
-          "gender": "Male",
-          "education": "B.Tech/B.E.",
-          "experience": 21,
-          "salary": 1399850
-        },
-        {
-          "id": 8,
-          "position": "Technical Project Manager Remote",
-          "location": "Pune",
-          "gender": "Male",
-          "education": "BCA",
-          "experience": 8,
-          "salary": 881054
-        },
-        {
-          "id": 9,
-          "position": "Provider Data Setup",
-          "location": "Kannur",
-          "gender": "Female",
-          "education": "BCA",
-          "experience": 20,
-          "salary": 1486474
-        },
-        {
-          "id": 10,
-          "position": "iOS Tester",
-          "location": "Gurugram",
-          "gender": "Female",
-          "education": "B.Tech/B.E.",
-          "experience": 20,
-          "salary": 1981284
-        }
-      ]
-      `;
+    const newQuery = { type: 'query', content: prompt };
+    setChatHistory((prev) => [...prev, newQuery]);
+    setPrompt('');
+    setLoading(true);
 
-      let bodyData = `
-      {
-        "contents": 
-        [
-            {
-                
-              "parts": 
-              [
-                    {
-                        "text": "${prompt}"
-                    },
-                    {
-                        "text": "${dataset}"
-                    }
-                
-         ]
-        }
-       ]
-    }`;
-      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyDst_ttD22u61RAHnS2wAjIUIKUHtuZ7PM', { 
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-       
-        body: { bodyData },
-      });
+     try {
+       const response = await fetch(
+         //'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyDst_ttD22u61RAHnS2wAjIUIKUHtuZ7PM',
+         'https://8091-cs-2cd89a3d-2154-45ea-9f90-2fa02b7963e1.cs-asia-southeast1-seal.cloudshell.dev/salary-plus/chat?prompt='+newQuery.content,
+         {
+           method: 'GET',
+          //  headers: {
+          //    'Content-Type': 'application/json',
+          //  },
+          //  body: JSON.stringify({ prompt: newQuery.content }),
+         }
+       );
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+       if (!response.ok) {
+         throw new Error('Network response was not ok');
+       }
 
-      const data = await response.json();
-      setResponse(data.response); 
-    } catch (error) {
-      console.error('Error fetching response:', error);
-      setResponse('Error fetching response.');
+       const data = await response.json();
+       const newResponse = { type: 'response', content: data.response || 'No response available.' };
+       setChatHistory((prev) => [...prev, newResponse]);
+     } catch (error) {
+       console.error('Error fetching response:', error);
+       const errorResponse = { type: 'response', content: 'Error fetching response.' };
+       setChatHistory((prev) => [...prev, errorResponse]);
+       return;
+     } finally {
+       setLoading(false);
+     }
+    setLoading(false);
+    setPrompt('');
+    setChatHistory((prev) => [...prev, { type: 'response', content: 'Response from server' }]);
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      // Trigger the send action here
+      console.log('Enter key pressed, send message!');
+      handleSubmit();
+      // Add your logic to send the message, e.g., making an API call
     }
   };
 
   return (
-    <Container maxWidth="md">
-      <Box sx={{ my: 4 }}>
-        <Typography variant="h4" component="h2" align="center" gutterBottom>
-          Salary-Plus
-        </Typography>
+    <Container maxWidth="md" className='main-com'>
+      <Box
+        sx={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          bgcolor: 'antiquewhite',
+          py: 4,
+        }}
+      >
+        <Paper
+          elevation={3}
+          sx={{
+            width: '100%',
+            maxWidth: '800px',
+            p: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            height: '100%',
+          }}
+        >
+          <Typography
+            variant="h5"
+            component="div"
+            align="center"
+            gutterBottom
+            sx={{ fontWeight: 'bold', color: '#3f51b5' }}
+          >
+           Salary Plus Gen AI
+          </Typography>
 
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
+          <Box
+            sx={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+              overflow: 'auto',
+              maxHeight: '400px',
+              border: '1px solid #ddd',
+              borderRadius: '8px',
+              padding: 2,
+              bgcolor: '#fff',
+            }}
+          >
+            {chatHistory.map((chat, index) => (
+              <Box
+                key={index}
+                inputRef={inputRef}
+                sx={{
+                  alignSelf: chat.type === 'query' ? 'flex-start' : 'flex-end',
+                  bgcolor: chat.type === 'query' ? '#e0f7fa' : '#f1f8e9',
+                  color: '#000',
+                  borderRadius: 2,
+                  p: 1,
+                  maxWidth: '80%',
+                  wordWrap: 'break-word',
+                }}
+              >
+                <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }} >
+                  {chat.content}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <TextField
-              id="outlined-multiline-static"
-              label="Enter your prompt"
+              id="chat-input"
+              placeholder="Type your prompt here..."
               multiline
-              rows={4}
+              rows={2}
               value={prompt}
               onChange={handlePromptChange}
               fullWidth
+              inputRef={inputRef}
+              i//nputProps={{ ref: inputRef }}
+              onKeyDown={handleKeyDown}
+              variant="outlined"
             />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              id="outlined-multiline-static"
-              label="Response"
-              multiline
-              rows={4}
-              value={response}
-              disabled 
-              fullWidth
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <Button variant="contained" color="primary" fullWidth onClick={handleSubmit}>
-              Submit
-            </Button>
-          </Grid>
-        </Grid>
+            <IconButton
+              color="primary"
+              onClick={handleSubmit}
+              disabled={loading || !prompt.trim()}
+            >
+              {loading ? <CircularProgress size={24} /> : <SendIcon />}
+            </IconButton>
+          </Box>
+          <Typography
+            variant="caption"
+            align="right"
+            display="block"
+            sx={{ mt: 2, color: '#888' }}
+          >
+            Powered by Gemini 2.0
+          </Typography>
+        </Paper>
       </Box>
     </Container>
   );
